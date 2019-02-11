@@ -34635,7 +34635,7 @@ exports.getAdjacentKeyPoints = getAdjacentKeyPoints;
 exports.getBoundingBox = getBoundingBox;
 exports.getBoundingBoxPoints = getBoundingBoxPoints;
 },{"@tensorflow/tfjs":"node_modules\\@tensorflow\\tfjs\\dist\\tf.esm.js"}],"demo_util.js":[function(require,module,exports) {
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -34650,16 +34650,17 @@ exports.renderImageToCanvas = renderImageToCanvas;
 exports.drawHeatMapValues = drawHeatMapValues;
 exports.drawOffsetVectors = drawOffsetVectors;
 
-var _tfjs = require('@tensorflow/tfjs');
-
-var tf = _interopRequireWildcard(_tfjs);
-
-var _posenet = require('@tensorflow-models/posenet');
+var _posenet = require("@tensorflow-models/posenet");
 
 var posenet = _interopRequireWildcard(_posenet);
 
+var _tfjs = require("@tensorflow/tfjs");
+
+var tf = _interopRequireWildcard(_tfjs);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
+// const color = "aqua";
 /**
  * @license
  * Copyright 2018 Google Inc. All Rights Reserved.
@@ -34676,8 +34677,9 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
  * limitations under the License.
  * =============================================================================
  */
-const color = 'aqua';
-const lineWidth = 2;
+const color = ['Red', 'orange', 'blue', 'magenta', 'lime'];
+const boundingBoxColor = "red";
+const lineWidth = 3;
 
 function toTuple({ y, x }) {
   return [y, x];
@@ -34706,18 +34708,26 @@ function drawSegment([ay, ax], [by, bx], color, scale, ctx) {
  * Draws a pose skeleton by looking up all adjacent keypoints/joints
  */
 function drawSkeleton(keypoints, minConfidence, ctx, scale = 1) {
-  const adjacentKeyPoints = posenet.getAdjacentKeyPoints(keypoints, minConfidence);
 
-  adjacentKeyPoints.forEach(keypoints => {
-    drawSegment(toTuple(keypoints[0].position), toTuple(keypoints[1].position), color, scale, ctx);
-  });
+  const keypoint5 = keypoints[5];
+  const keypoint6 = keypoints[6];
+  const keypoint7 = keypoints[7];
+  const keypoint8 = keypoints[8];
+  const keypoint9 = keypoints[9];
+  const keypoint10 = keypoints[10];
+
+  drawSegment(toTuple(keypoint7.position), toTuple(keypoint9.position), color[0], scale, ctx);
+  drawSegment(toTuple(keypoint5.position), toTuple(keypoint7.position), color[1], scale, ctx);
+  drawSegment(toTuple(keypoint5.position), toTuple(keypoint6.position), color[2], scale, ctx);
+  drawSegment(toTuple(keypoint6.position), toTuple(keypoint8.position), color[3], scale, ctx);
+  drawSegment(toTuple(keypoint8.position), toTuple(keypoint10.position), color[4], scale, ctx);
 }
 
 /**
  * Draw pose keypoints onto a canvas
  */
 function drawKeypoints(keypoints, minConfidence, ctx, scale = 1) {
-  for (let i = 0; i < keypoints.length; i++) {
+  for (let i = 5; i < 11; i++) {
     const keypoint = keypoints[i];
 
     if (keypoint.score < minConfidence) {
@@ -34725,7 +34735,7 @@ function drawKeypoints(keypoints, minConfidence, ctx, scale = 1) {
     }
 
     const { y, x } = keypoint.position;
-    drawPoint(ctx, y * scale, x * scale, 3, color);
+    drawPoint(ctx, y * scale, x * scale, 3, 'black');
   }
 }
 
@@ -34739,6 +34749,7 @@ function drawBoundingBox(keypoints, ctx) {
 
   ctx.rect(boundingBox.minX, boundingBox.minY, boundingBox.maxX - boundingBox.minX, boundingBox.maxY - boundingBox.minY);
 
+  ctx.strokeStyle = boundingBoxColor;
   ctx.stroke();
 }
 
@@ -34770,7 +34781,7 @@ async function renderToCanvas(a, ctx) {
 function renderImageToCanvas(image, size, canvas) {
   canvas.width = size[0];
   canvas.height = size[1];
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
 
   ctx.drawImage(image, 0, 0);
 }
@@ -34781,9 +34792,9 @@ function renderImageToCanvas(image, size, canvas) {
  * https://medium.com/tensorflow/real-time-human-pose-estimation-in-the-browser-with-tensorflow-js-7dd0bc881cd5
  */
 function drawHeatMapValues(heatMapValues, outputStride, canvas) {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   const radius = 5;
-  const scaledValues = heatMapValues.mul(tf.scalar(outputStride, 'int32'));
+  const scaledValues = heatMapValues.mul(tf.scalar(outputStride, "int32"));
 
   drawPoints(ctx, scaledValues, radius, color);
 }
@@ -34813,22 +34824,8 @@ function drawPoints(ctx, points, radius, color) {
  * Read our blog post for a description of PoseNet's offset vector outputs
  * https://medium.com/tensorflow/real-time-human-pose-estimation-in-the-browser-with-tensorflow-js-7dd0bc881cd5
  */
-function drawOffsetVectors(heatMapValues, offsets, outputStride, scale = 1, ctx) {
-  const offsetPoints = posenet.singlePose.getOffsetPoints(heatMapValues, outputStride, offsets);
-
-  const heatmapData = heatMapValues.buffer().values;
-  const offsetPointsData = offsetPoints.buffer().values;
-
-  for (let i = 0; i < heatmapData.length; i += 2) {
-    const heatmapY = heatmapData[i] * outputStride;
-    const heatmapX = heatmapData[i + 1] * outputStride;
-    const offsetPointY = offsetPointsData[i];
-    const offsetPointX = offsetPointsData[i + 1];
-
-    drawSegment([heatmapY, heatmapX], [offsetPointY, offsetPointX], color, scale, ctx);
-  }
-}
-},{"@tensorflow/tfjs":"node_modules\\@tensorflow\\tfjs\\dist\\tf.esm.js","@tensorflow-models/posenet":"node_modules\\@tensorflow-models\\posenet\\dist\\posenet.esm.js"}],"content.js":[function(require,module,exports) {
+function drawOffsetVectors(heatMapValues, offsets, outputStride, scale = 1, ctx) {}
+},{"@tensorflow-models/posenet":"node_modules\\@tensorflow-models\\posenet\\dist\\posenet.esm.js","@tensorflow/tfjs":"node_modules\\@tensorflow\\tfjs\\dist\\tf.esm.js"}],"content.js":[function(require,module,exports) {
 'use strict';
 
 var _mobilenet = require('@tensorflow-models/mobilenet');
@@ -34869,7 +34866,7 @@ let mobilenet;
 const TOPK = 10;
 
 let count = 0;
-
+let hit = [0, 0, 0, 0, 0, 0, 0];
 //save& load
 let myIncomingClassifier = [];
 let myGroups = [];
@@ -34900,7 +34897,7 @@ async function detect() {
     let playAlert = setInterval(async function () {
         if (isDetecting === true && count == 0) {
             // const pose = await 
-            let pose = await model.estimateSinglePose(video, 0.35, true, 16);
+            let pose = await model.estimateSinglePose(video, 0.4, true, 16);
             // console.log(pose);
             ctx.clearRect(0, 0, 640, 480);
             if (pose.score >= 0.1) {
@@ -34916,7 +34913,8 @@ async function detect() {
                 // If classes have been added run predict
                 logits = infer();
                 const res = await knn.predictClass(logits, TOPK);
-                console.log(res.classIndex + " " + res.confidences[res.classIndex] * 100);
+                console.clear();
+                console.log("%c" + res.classIndex + " " + res.confidences[res.classIndex] * 100, "color: blue; font-size: 100pt");
                 // chrome.tabs.executeScript(null,{code:"scrollBy(0,200);"});
                 //control
                 var ytb_video = document.getElementsByTagName("video")[0];
@@ -34924,46 +34922,43 @@ async function detect() {
 
                 if (res.confidences[res.classIndex] * 100 > 60) {
                     switch (res.classIndex) {
-                        case 0:
-                            break;
                         case 1:
+                            if (ytb_video.volume < 0.2) {
+                                ytb_video.volume = 0.2;
+                            } else {
+                                ytb_video.volume -= 0.2;
+                            }
+                            break;
+                        case 2:
+                            if (ytb_video.volume > 0.8) {
+                                ytb_video.volume = 1;
+                            } else {
+                                ytb_video.volume += 0.1;
+                            }
+                            break;
+                        case 3:
                             //scrollBy(0,200);
                             if (ytb_video.paused) {
                                 ytb_video.play();
                             } else {
                                 ytb_video.pause();
                             }
+                            count = 5;
                             break;
-                        case 2:
+                        case 4:
+                            ytb_video.currentTime -= 10;
+                            break;
+                        case 5:
+                            ytb_video.currentTime += 10;
+                            break;
+                        case 6:
                             //scrollBy(0,-200);
                             nextButton.click();
                             break;
-                        case 3:
-                            if (ytb_video.volume > 0.9) {
-                                ytb_video.volume = 1;
-                            } else {
-                                ytb_video.volume += 0.1;
-                            }
-
-                            break;
-                        case 4:
-                            if (ytb_video.volume < 0.1) {
-                                ytb_video.volume = 0.1;
-                            } else {
-                                ytb_video.volume -= 0.1;
-                            }
-                            break;
-                        case 5:
-                            ytb_video.currentTime += 5;
-                            break;
-                        case 6:
-                            ytb_video.currentTime -= 5;
-                            break;
-
                         default:
                             break;
                     }
-                    if (res.classIndex != 0) count = 5;
+                    // if(res.classIndex != 0) count = 5;
                 }
             }
             // Dispose image when done
@@ -35043,6 +35038,7 @@ async function gotMessage(message, sender, sendResponse) {
             loaded = true;
         }
         if (!isDetecting && loaded && !videoErr) {
+            video = await loadVideo();
             isDetecting = true;
             detect();
         }
@@ -35077,7 +35073,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '62765' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '54818' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 

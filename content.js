@@ -21,7 +21,7 @@ let mobilenet;
 const TOPK = 10;
 
 let count = 0;
-
+let hit =[0,0,0,0,0,0,0];
 //save& load
 let myIncomingClassifier = [];
 let myGroups = []
@@ -52,7 +52,7 @@ async function detect(){
     let playAlert = setInterval(async function(){
         if(isDetecting === true&& count==0){
             // const pose = await 
-            let pose = await model.estimateSinglePose(video,0.3,true,16);
+            let pose = await model.estimateSinglePose(video,0.4,true,16);
             // console.log(pose);
             ctx.clearRect(0,0,640,480);
             if (pose.score >= 0.1) {
@@ -68,7 +68,8 @@ async function detect(){
                 // If classes have been added run predict
                 logits = infer();
                 const res = await knn.predictClass(logits, TOPK);
-                console.log(res.classIndex + " " + res.confidences[res.classIndex]*100);
+                console.clear();
+                console.log("%c" + res.classIndex + " " + res.confidences[res.classIndex]*100, "color: blue; font-size: 100pt");
                 // chrome.tabs.executeScript(null,{code:"scrollBy(0,200);"});
                 //control
                 var ytb_video = document.getElementsByTagName("video")[0];
@@ -76,7 +77,21 @@ async function detect(){
 
                 if(res.confidences[res.classIndex]*100 > 60){
                     switch(res.classIndex){
-                        case 0:
+                        case 1:
+                            if(ytb_video.volume < 0.2){
+                                ytb_video.volume = 0.2;
+                            }
+                            else{
+                                ytb_video.volume -= 0.2;
+                            }
+                            break;
+                        case 2:
+                            if (ytb_video.volume > 0.8){
+                                ytb_video.volume = 1;
+                            }
+                            else{ 
+                                ytb_video.volume += 0.1;
+                            }
                             break;
                         case 3:
                             //scrollBy(0,200);
@@ -86,41 +101,22 @@ async function detect(){
                             else{
                                 ytb_video.pause();
                             }
+                            count = 5;
+                            break;
+                        case 4:
+                            ytb_video.currentTime -= 10;
+                            break;
+                        case 5:
+                            ytb_video.currentTime += 10;
                             break;
                         case 6:
                             //scrollBy(0,-200);
                             nextButton.click();
                             break;
-                        case 1:
-                            if (ytb_video.volume > 0.9){
-                                ytb_video.volume = 1;
-                            }
-                               
-                            else{ 
-                                ytb_video.volume += 0.1;
-                            }
-                               
-                            break;
-                        case 2:
-                            if(ytb_video.volume < 0.1){
-                                ytb_video.volume = 0.1;
-                            }
-                               
-                            else{
-                                ytb_video.volume -= 0.1;
-                            }  
-                            break;
-                        case 4:
-                            ytb_video.currentTime += 5;
-                            break;
-                        case 5:
-                            ytb_video.currentTime -= 5;
-                            break;
-                            
                         default:
                             break;
                     }
-                    if(res.classIndex != 0) count = 5;
+                    // if(res.classIndex != 0) count = 5;
                 }
             }
             // Dispose image when done
@@ -203,6 +199,7 @@ async function gotMessage(message, sender, sendResponse){
             loaded = true;
         }
         if(!isDetecting && loaded && !videoErr){
+            video = await loadVideo();
             isDetecting = true;
             detect();
         }
