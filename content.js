@@ -38,7 +38,7 @@ async function setup(){
     // console.log(video);
     await loadCanvas();
     // if(model) model.dispose();
-    model = await posenet.load(1.01);
+    model = await posenet.load(0.75);
     // console.log(model);
     // if(knn) knn.dispose();
     knn = knnClassifier.create();
